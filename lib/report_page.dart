@@ -3,13 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import 'services/firestore_service.dart';
+import 'package:potholedetect/submit.dart';
 import 'services/location_service.dart';
 import 'widgets/location_widget.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
+
   @override
   State<ReportPage> createState() => _ReportPageState();
 }
@@ -22,32 +22,40 @@ class _ReportPageState extends State<ReportPage> {
   double? _lat;
   double? _lng;
   String? _address;
-  final fs = FirestoreService();
   final LocationService _locationService = LocationService();
 
+  // --- Take photo ---
   Future<void> _takePhoto() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera, maxWidth: 1200, maxHeight: 800, imageQuality: 80);
+    final picked = await picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1200,
+      maxHeight: 800,
+      imageQuality: 80,
+    );
     if (picked != null) {
       setState(() => _image = File(picked.path));
     }
   }
 
+  // --- Get location ---
   Future<void> _getLocation() async {
     setState(() => _loading = true);
-    
+
     try {
-      Map<String, dynamic>? locationData = await _locationService.getLocationWithAddress();
+      Map<String, dynamic>? locationData =
+          await _locationService.getLocationWithAddress();
       if (locationData != null) {
         setState(() {
           _lat = locationData['latitude'];
           _lng = locationData['longitude'];
           _address = locationData['address'];
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Location captured: ${_address ?? 'Address not available'}'),
+            content: Text(
+                'Location captured: ${_address ?? 'Address not available'}'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -55,7 +63,8 @@ class _ReportPageState extends State<ReportPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to get location. Please enable location services.'),
+            content:
+                Text('Failed to get location. Please enable location services.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -82,14 +91,17 @@ class _ReportPageState extends State<ReportPage> {
     });
   }
 
+  // --- Submit (without Firebase Storage) ---
   Future<void> _submit() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in to report')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('You must be logged in to submit a report')));
       return;
     }
     if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please take a photo')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please take a photo')));
       return;
     }
     if (_lat == null || _lng == null) {
@@ -98,34 +110,16 @@ class _ReportPageState extends State<ReportPage> {
     }
 
     setState(() => _loading = true);
-    try {
-      final imageUrl = await fs.uploadImage(_image!, 'posts');
-      await fs.createPost(
-        imageUrl: imageUrl,
-        uid: user.uid,
-        username: user.displayName ?? user.email?.split('@').first ?? 'Anonymous',
-        severity: _severity,
-        note: _noteCtrl.text.trim(),
-        lat: _lat!,
-        lng: _lng!,
-        locationText: _address ?? 'Location not available',
-      );
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Report submitted successfully!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      
-      // Navigate back to explore page
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      setState(() => _loading = false);
-    }
+
+    // --- Simulate submission (no Firebase) ---
+    await Future.delayed(const Duration(seconds: 1)); // simulate network delay
+
+    setState(() => _loading = false);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ReportSubmittedPage()),
+    );
   }
 
   @override
@@ -140,9 +134,7 @@ class _ReportPageState extends State<ReportPage> {
       appBar: AppBar(
         title: Text(
           'Report a Pothole',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -164,63 +156,7 @@ class _ReportPageState extends State<ReportPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.indigo.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        color: Colors.indigo.shade600,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Take a Photo",
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.indigo.shade900,
-                            ),
-                          ),
-                          Text(
-                            "Capture the pothole clearly for better reporting",
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Photo section
+              // --- Photo Section ---
               GestureDetector(
                 onTap: _takePhoto,
                 child: Container(
@@ -229,20 +165,14 @@ class _ReportPageState extends State<ReportPage> {
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                      style: BorderStyle.solid,
-                    ),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
                   child: _image == null
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.camera_alt,
-                              size: 48,
-                              color: Colors.grey.shade400,
-                            ),
+                            Icon(Icons.camera_alt,
+                                size: 48, color: Colors.grey.shade400),
                             const SizedBox(height: 12),
                             Text(
                               'Tap to take photo',
@@ -267,158 +197,50 @@ class _ReportPageState extends State<ReportPage> {
               ),
               const SizedBox(height: 24),
 
-              // Severity section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+              // --- Severity Section ---
+              Text(
+                'Severity Level',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.indigo.shade900,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning,
-                          color: Colors.indigo.shade600,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Severity Level',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.indigo.shade900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(
-                          '1',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Expanded(
-                          child: Slider(
-                            min: 1,
-                            max: 5,
-                            divisions: 4,
-                            value: _severity.toDouble(),
-                            activeColor: _getSeverityColor(_severity),
-                            inactiveColor: Colors.grey.shade300,
-                            onChanged: (v) => setState(() => _severity = v.toInt()),
-                          ),
-                        ),
-                        Text(
-                          '5',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getSeverityColor(_severity).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: _getSeverityColor(_severity).withOpacity(0.3),
-                          ),
-                        ),
-                        child: Text(
-                          'Severity $_severity - ${_getSeverityText(_severity)}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _getSeverityColor(_severity),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              ),
+              Slider(
+                min: 1,
+                max: 5,
+                divisions: 4,
+                value: _severity.toDouble(),
+                activeColor: _getSeverityColor(_severity),
+                inactiveColor: Colors.grey.shade300,
+                onChanged: (v) => setState(() => _severity = v.toInt()),
+              ),
+              Center(
+                child: Text(
+                  'Severity $_severity - ${_getSeverityText(_severity)}',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: _getSeverityColor(_severity),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Note section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+              // --- Notes Section ---
+              TextField(
+                controller: _noteCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Describe the pothole...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.note,
-                          color: Colors.indigo.shade600,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Additional Notes',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.indigo.shade900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _noteCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Describe the pothole location and condition...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.indigo, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                      maxLines: 3,
-                    ),
-                  ],
-                ),
+                maxLines: 3,
               ),
               const SizedBox(height: 24),
 
-              // Location section
+              // --- Location Section ---
               LocationWidget(
                 onLocationUpdate: _onLocationUpdate,
                 showToggle: true,
@@ -426,7 +248,7 @@ class _ReportPageState extends State<ReportPage> {
               ),
               const SizedBox(height: 32),
 
-              // Submit button
+              // --- Submit Button ---
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -458,7 +280,6 @@ class _ReportPageState extends State<ReportPage> {
                         ),
                 ),
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
