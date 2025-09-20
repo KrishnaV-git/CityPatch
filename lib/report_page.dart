@@ -2,10 +2,11 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'services/firestore_service.dart';
+import 'services/location_service.dart';
+import 'widgets/location_widget.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -20,7 +21,9 @@ class _ReportPageState extends State<ReportPage> {
   bool _loading = false;
   double? _lat;
   double? _lng;
+  String? _address;
   final fs = FirestoreService();
+  final LocationService _locationService = LocationService();
 
   Future<void> _takePhoto() async {
     final picker = ImagePicker();
@@ -31,21 +34,51 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future<void> _getLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enable location services')));
-      return;
+    setState(() => _loading = true);
+    
+    try {
+      Map<String, dynamic>? locationData = await _locationService.getLocationWithAddress();
+      if (locationData != null) {
+        setState(() {
+          _lat = locationData['latitude'];
+          _lng = locationData['longitude'];
+          _address = locationData['address'];
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Location captured: ${_address ?? 'Address not available'}'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to get location. Please enable location services.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      setState(() => _loading = false);
     }
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permission denied')));
-      return;
-    }
-    final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  void _onLocationUpdate(String? address, double? latitude, double? longitude) {
     setState(() {
-      _lat = pos.latitude;
-      _lng = pos.longitude;
+      _address = address;
+      _lat = latitude;
+      _lng = longitude;
     });
   }
 
@@ -75,7 +108,7 @@ class _ReportPageState extends State<ReportPage> {
         note: _noteCtrl.text.trim(),
         lat: _lat!,
         lng: _lng!,
-        locationText: '', // optionally do reverse geocoding to fill
+        locationText: _address ?? 'Location not available',
       );
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -386,86 +419,10 @@ class _ReportPageState extends State<ReportPage> {
               const SizedBox(height: 24),
 
               // Location section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          color: Colors.indigo.shade600,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Location',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.indigo.shade900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _getLocation,
-                      icon: const Icon(Icons.my_location),
-                      label: const Text('Get Current Location'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo.shade50,
-                        foregroundColor: Colors.indigo.shade700,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    if (_lat != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green.shade600,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Location captured: ${_lat!.toStringAsFixed(4)}, ${_lng!.toStringAsFixed(4)}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.green.shade700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+              LocationWidget(
+                onLocationUpdate: _onLocationUpdate,
+                showToggle: true,
+                showCurrentLocation: true,
               ),
               const SizedBox(height: 32),
 

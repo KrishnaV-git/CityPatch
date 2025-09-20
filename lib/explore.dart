@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:potholedetect/login_page.dart';
 import 'package:potholedetect/post_detail_page.dart';
 import 'package:potholedetect/report_page.dart';
+import 'package:potholedetect/widgets/location_widget.dart';
+import 'package:potholedetect/services/location_service.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -17,6 +19,49 @@ class _ExplorePageState extends State<ExplorePage> {
   final random = Random();
   final Map<String, bool> _likedPosts = {};
   final Map<String, int> _likeCounts = {};
+  final LocationService _locationService = LocationService();
+  double? _currentLatitude;
+  double? _currentLongitude;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocation();
+  }
+
+  Future<void> _initializeLocation() async {
+    await _locationService.initialize();
+  }
+
+  void _onLocationUpdate(String? address, double? latitude, double? longitude) {
+    setState(() {
+      _currentLatitude = latitude;
+      _currentLongitude = longitude;
+    });
+  }
+
+  String? _getDistanceFromCurrent(String reportLocation) {
+    if (_currentLatitude == null || _currentLongitude == null) return null;
+    
+    Map<String, Map<String, double>> reportCoordinates = {
+      "MG Road, Bangalore": {"lat": 12.9716, "lng": 77.5946},
+      "Park Street, Kolkata": {"lat": 22.5448, "lng": 88.3426},
+      "Outer Ring Road, Hyderabad": {"lat": 17.3850, "lng": 78.4867},
+    };
+    
+    if (reportCoordinates.containsKey(reportLocation)) {
+      var coords = reportCoordinates[reportLocation]!;
+      double distance = _locationService.getDistanceBetween(
+        _currentLatitude!,
+        _currentLongitude!,
+        coords["lat"]!,
+        coords["lng"]!,
+      );
+      return _locationService.formatDistance(distance);
+    }
+    
+    return null;
+  }
 
   final sampleReports = [
     {
@@ -426,6 +471,18 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
           ),
           
+          // Location Services Widget
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: LocationWidget(
+              onLocationUpdate: _onLocationUpdate,
+              showToggle: true,
+              showCurrentLocation: true,
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
           // Reports list
           Expanded(
             child: ListView.builder(
@@ -589,12 +646,36 @@ class _ExplorePageState extends State<ExplorePage> {
                                 ),
                                 const SizedBox(width: 6),
                                 Expanded(
-                                  child: Text(
-                                    report["location"].toString(),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        report["location"].toString(),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                      if (_getDistanceFromCurrent(report["location"].toString()) != null) ...[
+                                        const SizedBox(height: 2),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: Colors.blue.shade200),
+                                          ),
+                                          child: Text(
+                                            '${_getDistanceFromCurrent(report["location"].toString())} away',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 11,
+                                              color: Colors.blue.shade700,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ],
