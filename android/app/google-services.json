@@ -1,0 +1,134 @@
+{
+  "project_info": {
+    "project_number": "500898513632",
+    "project_id": "kalamachine1-9cc2b",
+    "storage_bucket": "kalamachine1-9cc2b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500898513632:android:c646883d290cd65d780685",
+        "android_client_info": {
+          "package_name": "com.company.kalamachine1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "500898513632-nao0h1hepl24ijd868s2sejtkl3qlgu1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.company.kalamachine1",
+            "certificate_hash": "00a4d625b1a16fec9f6c6b15f84a5e11d48a3dc8"
+          }
+        },
+        {
+          "client_id": "500898513632-sgketj4er3a3og6hod8rus6b41genph5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfymTSFInfSXfQ3IGj7-nSKW_WLFEUyFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500898513632-03dg8t6qltt5os31hevtfukfjnm63996.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500898513632-840qo9mmuj6kpddpjob8qqb2qbi62suh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.potholedetect"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500898513632:android:231746187b2d0bd5780685",
+        "android_client_info": {
+          "package_name": "com.example.potholedetect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "500898513632-n75nbnv6o7299bbldr1jkusnra67u4b9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.potholedetect",
+            "certificate_hash": "00a4d625b1a16fec9f6c6b15f84a5e11d48a3dc8"
+          }
+        },
+        {
+          "client_id": "500898513632-sgketj4er3a3og6hod8rus6b41genph5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfymTSFInfSXfQ3IGj7-nSKW_WLFEUyFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500898513632-03dg8t6qltt5os31hevtfukfjnm63996.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500898513632-840qo9mmuj6kpddpjob8qqb2qbi62suh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.potholedetect"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500898513632:android:9e06b0bff52dbb71780685",
+        "android_client_info": {
+          "package_name": "com.krishna.pothole"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "500898513632-sgketj4er3a3og6hod8rus6b41genph5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfymTSFInfSXfQ3IGj7-nSKW_WLFEUyFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500898513632-03dg8t6qltt5os31hevtfukfjnm63996.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500898513632-840qo9mmuj6kpddpjob8qqb2qbi62suh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.potholedetect"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
